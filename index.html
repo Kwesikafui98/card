@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Memory Card Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #74b0c8, #8f7373, #2ecc71;
+            margin: 0;
+            padding: 20px;
+        }
+        #game-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            max-width: 600px;
+        }
+        .card {
+            width: 100px;
+            height: 150px;
+            background-color: #3498db;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            cursor: pointer;
+            transition: transform 0.3s;
+            user-select: none;
+        }
+        .card.flipped {
+            background-color: #2ecc71;
+            transform: rotateY(180deg);
+        }
+        .card.matched {
+            background-color: #95a5a6;
+            cursor: default;
+            opacity: 0.6;
+        }
+        #game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 400px;
+            margin-bottom: 20px;
+        }
+        #restart-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-info">
+        <div>Time: <span id="timer">00:00</span></div>
+        <div>Score: <span id="score">0</span></div>
+        <button id="restart-btn">Restart</button>
+    </div>
+    <div id="game-container"></div>
+
+    <script>
+        class MemoryGame {
+            constructor() {
+                this.cards = [];
+                this.flippedCards = [];
+                this.matchedPairs = 0;
+                this.timer = null;
+                this.seconds = 0;
+                this.score = 0;
+
+                this.emojis = [
+                    '🍎', '🍎', '🍌', '🍌', 
+                    '🚀', '🚀', '🌈', '🌈', 
+                    '🐶', '🐶', '🐱', '🐱', 
+                    '🚗', '🚗', '🏀', '🏀'
+                ];
+
+                this.initGame();
+            }
+
+            initGame() {
+                const gameContainer = document.getElementById('game-container');
+                gameContainer.innerHTML = '';
+                this.shuffleCards();
+
+                this.emojis.forEach((emoji, index) => {
+                    const card = document.createElement('div');
+                    card.classList.add('card');
+                    card.dataset.emoji = emoji;
+                    card.addEventListener('click', () => this.flipCard(card));
+                    gameContainer.appendChild(card);
+                });
+
+                document.getElementById('restart-btn').addEventListener('click', () => this.restartGame());
+                this.startTimer();
+            }
+
+            shuffleCards() {
+                for (let i = this.emojis.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.emojis[i], this.emojis[j]] = [this.emojis[j], this.emojis[i]];
+                }
+            }
+
+            flipCard(card) {
+                if (this.flippedCards.length >= 2 || 
+                    card.classList.contains('matched') || 
+                    card.classList.contains('flipped')) return;
+
+                card.textContent = card.dataset.emoji;
+                card.classList.add('flipped');
+                this.flippedCards.push(card);
+
+                if (this.flippedCards.length === 2) {
+                    setTimeout(() => this.checkMatch(), 1000);
+                }
+            }
+
+            checkMatch() {
+                const [card1, card2] = this.flippedCards;
+                
+                if (card1.dataset.emoji === card2.dataset.emoji) {
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    this.matchedPairs++;
+                    this.updateScore(50);
+                } else {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    card1.textContent = '';
+                    card2.textContent = '';
+                    this.updateScore(-10);
+                }
+
+                this.flippedCards = [];
+
+                if (this.matchedPairs === this.emojis.length / 2) {
+                    this.endGame();
+                }
+            }
+
+            startTimer() {
+                const timerDisplay = document.getElementById('timer');
+                this.timer = setInterval(() => {
+                    this.seconds++;
+                    const minutes = Math.floor(this.seconds / 60);
+                    const remainingSeconds = this.seconds % 60;
+                    timerDisplay.textContent = 
+                        `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+                }, 1000);
+            }
+
+            updateScore(points) {
+                this.score = Math.max(0, this.score + points);
+                document.getElementById('score').textContent = this.score;
+            }
+
+            endGame() {
+                clearInterval(this.timer);
+                alert(`Congratulations! You won in ${this.seconds} seconds with a score of ${this.score}!`);
+            }
+
+            restartGame() {
+                clearInterval(this.timer);
+                this.seconds = 0;
+                this.score = 0;
+                this.matchedPairs = 0;
+                document.getElementById('timer').textContent = '00:00';
+                document.getElementById('score').textContent = '0';
+                this.initGame();
+            }
+        }
+
+        // Initialize the game when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new MemoryGame();
+        });
+    </script>
+</body>
+</html>
