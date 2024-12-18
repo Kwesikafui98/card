@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,7 +8,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: #74b0c8, #8f7373, #2ecc71;
+            background-color: #c7e662; /* Set a single background color */
             margin: 0;
             padding: 20px;
         }
@@ -54,16 +53,28 @@
             cursor: pointer;
             border-radius: 5px;
         }
-    </style>
+        footer {
+            background-color: #3498db; /* Example background color */
+            color: white; /* Text color */
+            text-align: center; /* Center the text */
+            padding: 10px 0; /* Padding for spacing */
+            margin-top: 20px; /* Space above the footer */
+        }
+    </style> <!-- Closing brace for the style -->
 </head>
 <body>
-    <div id="game-info">
+    <div id="game-info" style="display: none;">
         <div>Time: <span id="timer">00:00</span></div>
         <div>Score: <span id="score">0</span></div>
         <button id="restart-btn">Restart</button>
     </div>
-    <div id="game-container"></div>
+    <div id="game-container" style="display: none;"></div>
 
+    <audio id="flip-sound" src="flip.mp3" preload="auto"></audio>
+    <audio id="match-sound" src="match.mp3" preload="auto"></audio> <!-- Added match sound -->
+    <audio id="win-sound" src="win.mp3" preload="auto"></audio> <!-- Added win sound -->
+    <audio id="loss-sound" src="loss.mp3" preload="auto"></audio> <!-- Added loss sound -->
+    <audio id="piano-sound" src="piano.mp3" preload="auto"></audio> <!-- Added piano sound -->
     <script>
         class MemoryGame {
             constructor() {
@@ -73,6 +84,7 @@
                 this.timer = null;
                 this.seconds = 0;
                 this.score = 0;
+                this.timeLimit = 60; // Set time limit to 60 seconds
 
                 this.emojis = [
                     '🍎', '🍎', '🍌', '🍌', 
@@ -89,7 +101,7 @@
                 gameContainer.innerHTML = '';
                 this.shuffleCards();
 
-                this.emojis.forEach((emoji, index) => {
+                this.emojis.forEach((emoji) => {
                     const card = document.createElement('div');
                     card.classList.add('card');
                     card.dataset.emoji = emoji;
@@ -99,6 +111,9 @@
 
                 document.getElementById('restart-btn').addEventListener('click', () => this.restartGame());
                 this.startTimer();
+                document.getElementById('piano-sound').play(); // Play piano sound at the start
+                document.getElementById('game-info').style.display = 'flex'; // Show game info
+                document.getElementById('game-container').style.display = 'grid'; // Show game container
             }
 
             shuffleCards() {
@@ -113,6 +128,8 @@
                     card.classList.contains('matched') || 
                     card.classList.contains('flipped')) return;
 
+                // Play flip sound
+                document.getElementById('flip-sound').play();
                 card.textContent = card.dataset.emoji;
                 card.classList.add('flipped');
                 this.flippedCards.push(card);
@@ -128,6 +145,8 @@
                 if (card1.dataset.emoji === card2.dataset.emoji) {
                     card1.classList.add('matched');
                     card2.classList.add('matched');
+                    // Play match sound
+                    document.getElementById('match-sound').play();
                     this.matchedPairs++;
                     this.updateScore(50);
                 } else {
@@ -153,6 +172,14 @@
                     const remainingSeconds = this.seconds % 60;
                     timerDisplay.textContent = 
                         `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+
+                    // Check if time limit is reached
+                    if (this.seconds >= this.timeLimit) {
+                        clearInterval(this.timer);
+                        const sadEmoji = '😢';
+                        document.getElementById('loss-sound').play(); // Play loss sound
+                        alert(`Sorry, you lost! Try again. ${sadEmoji}`);
+                    }
                 }, 1000);
             }
 
@@ -163,7 +190,9 @@
 
             endGame() {
                 clearInterval(this.timer);
+                document.getElementById('win-sound').play(); // Play win sound
                 alert(`Congratulations! You won in ${this.seconds} seconds with a score of ${this.score}!`);
+                // this.showBubbles(); // Commented out as the function is not defined
             }
 
             restartGame() {
@@ -177,10 +206,52 @@
             }
         }
 
-        // Initialize the game when the page loads
+        // Automatically start the game when the page loads
         document.addEventListener('DOMContentLoaded', () => {
             new MemoryGame();
         });
+        
+        const blaskconfetti = () => {
+            const duration = 15 * 1000,
+            animationEnd = Date.now() + duration,
+            defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                const particleCount = 50 * (timeLeft / duration);
+
+                // since particles fall down, start a bit higher than random
+                confetti(
+                    Object.assign({}, defaults, {
+                        particleCount,
+                        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+                    })
+                );
+                confetti(
+                    Object.assign({}, defaults, {
+                        particleCount,
+                        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+                    })
+                );
+            }, 250);
+        };
     </script>
+        
+<footer>
+        <p>
+            <marquee behavior="" direction="left">Developed by Albert Mortiglo & Belinda Osei-Poku.
+                For quality & affordable website kindly contact: 0555029433
+            </marquee>
+        </p>
+    </footer>
 </body>
 </html>
